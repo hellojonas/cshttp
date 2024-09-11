@@ -109,6 +109,7 @@ public class Parser
             path = firstLine[1].Trim(),
             version = firstLine[2].Trim(),
             headers = headers,
+            body = stream
         };
     }
 

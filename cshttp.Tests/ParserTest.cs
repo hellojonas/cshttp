@@ -25,8 +25,6 @@ public class ParserTest
             body;
 
         Stream stream = new MemoryStream(Encoding.UTF8.GetBytes(message));
-
-
         Request request = Parser.parse(stream);
 
         Assert.Equal(method, request.method);
@@ -35,16 +33,14 @@ public class ParserTest
 
         Assert.Equal(contentType, request.headers["Content-Type"]);
         Assert.Equal(host, request.headers["Host"]);
-        
+
         int contentLength = int.Parse(request.headers["Content-Length"]);
         Assert.Equal(len, contentLength);
 
-        // byte[] data = new byte[len];
+        byte[] data = new byte[len];
+        request.body.Read(data, 0, data.Length);
+        String strData = Encoding.UTF8.GetString(data);
 
-        // request.body.Read(data, 0, data.Length);
-
-        // String strData = Encoding.UTF8.GetString(data);
-
-        // Assert.Equal(body, strData);
+        Assert.Equal(body, strData);
     }
 }
