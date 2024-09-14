@@ -19,7 +19,7 @@ static class Method
 public class Request
 {
     public String? method;
-    public String? path;
+    public String? target;
     public String? version;
     public Stream? body;
     public Dictionary<String, String> headers = new Dictionary<String, String>();
@@ -27,101 +27,95 @@ public class Request
 
 public class Parser
 {
-    static byte newLine = 10;
+    static byte lFeed = 10;
     static byte cReturn = 13;
+    static byte colon = 58;
+    static byte space = 32;
 
     public static Request parse(Stream stream)
     {
+        Request request = new Request();
 
         byte[] chunk = new byte[1024];
+        byte read;
         int offset = 0;
 
         while (true)
         {
-            stream.Read(chunk, offset, 1);
-            if (chunk[offset] == cReturn)
+            read = readByte(stream, chunk, offset++, 1);
+            if (read == lFeed || read == cReturn)
             {
-                stream.Read(chunk, ++offset, 1);
-                if (chunk[offset] == newLine)
-                {
-                    break;
-                }
-                throw new Exception("Unexpected <CR> not ollowed by <LF> on first line.");
+                throw new Exception("Invalid request-line method. unexpected new line");
             }
 
-            offset++;
-        }
-
-        String[] firstLine = Encoding.UTF8.GetString(chunk, 0, offset).Split(" ");
-
-        if (firstLine.Length != 3)
-        {
-            throw new Exception("First line must contain the <METHOD> <RESOURCE> <HTTP_VERSION>.");
-        }
-
-        Dictionary<String, String> headers = new Dictionary<String, String>();
-
-        offset = 0;
-        while (true)
-        {
-            stream.Read(chunk, offset, 1);
-            if (chunk[offset] != cReturn)
+            if (offset - 1 == 0 && chunk[0] == space)
             {
-                offset++;
+                throw new Exception("Invalid request-line method. extra space not allowed");
+            }
+
+            if (read != space)
+            {
                 continue;
             }
 
-            if (!consumeNewLine(stream, chunk, offset + 1))
-            {
-                throw new Exception("Unexpected <CR> not ollowed by <LF> on headers.");
-            }
-
-
-            String[] header = Encoding.UTF8.GetString(chunk, 0, offset).Split(":");
-
-            if (header.Length != 2)
-            {
-                throw new Exception("Invalid header '" + header[0].Trim() + "'.");
-            }
-
-            headers[header[0].Trim()] = header[1].Trim();
-
+            request.method = Encoding.UTF8.GetString(chunk, 0, offset - 1);
             offset = 0;
-            stream.Read(chunk, offset, 1);
-
-            if (chunk[offset] != cReturn)
-            {
-                offset++;
-                continue;
-            }
-
-            if (!consumeNewLine(stream, chunk, offset++))
-            {
-                throw new Exception("Unexpected <CR> not ollowed by <LF> on headers.");
-            }
-
             break;
         }
 
-        return new Request()
+        while (true)
         {
-            method = firstLine[0].Trim(),
-            path = firstLine[1].Trim(),
-            version = firstLine[2].Trim(),
-            headers = headers,
-            body = stream
-        };
-    }
+            read = readByte(stream, chunk, offset++, 1);
+            if (read == lFeed || read == cReturn)
+            {
+                throw new Exception("Invalid request-line request-target. unexpected new line");
+            }
 
-    static bool consumeNewLine(Stream stream, byte[] chunk, int offset)
-    {
-        stream.Read(chunk, offset, 1);
+            if (read != space)
+            {
+                continue;
+            }
+            if (offset - 1 == 0)
+            {
+                throw new Exception("Invalid request-line, extra spacese not allowed");
+            }
 
-        if (chunk[offset] == newLine)
-        {
-            return true;
+            request.target = Encoding.UTF8.GetString(chunk, 0, offset - 1);
+            offset = 0;
+            break;
         }
 
-        return false;
+        while (true)
+        {
+            read = readByte(stream, chunk, offset++, 1);
+
+            if (read == space || read == lFeed)
+            {
+                throw new Exception("Invalid request-line, extra spacese not allowed");
+            }
+
+            if (read == cReturn)
+            {
+                read = readByte(stream, chunk, offset++, 1);
+
+                if (read != lFeed)
+                {
+                    throw new Exception("Invalid request-line termination. CR not followed by LF.");
+                }
+
+                request.version = Encoding.UTF8.GetString(chunk, 0, offset - 2);
+                offset = 0;
+                break;
+            }
+
+        }
+
+        return request;
+    }
+
+    static byte readByte(Stream stream, byte[] chunk, int offset, int count)
+    {
+        stream.Read(chunk, offset, 1);
+        return chunk[offset];
     }
 }
