@@ -42,7 +42,7 @@ public class Parser
 
         while (true)
         {
-            read = readByte(stream, chunk, offset++, 1);
+            read = readByte(stream, chunk, offset++);
             if (read == lFeed || read == cReturn)
             {
                 throw new Exception("Invalid request-line method. unexpected new line");
@@ -65,7 +65,7 @@ public class Parser
 
         while (true)
         {
-            read = readByte(stream, chunk, offset++, 1);
+            read = readByte(stream, chunk, offset++);
             if (read == lFeed || read == cReturn)
             {
                 throw new Exception("Invalid request-line request-target. unexpected new line");
@@ -87,7 +87,7 @@ public class Parser
 
         while (true)
         {
-            read = readByte(stream, chunk, offset++, 1);
+            read = readByte(stream, chunk, offset++);
 
             if (read == space || read == lFeed)
             {
@@ -96,7 +96,7 @@ public class Parser
 
             if (read == cReturn)
             {
-                read = readByte(stream, chunk, offset++, 1);
+                read = readByte(stream, chunk, offset++);
 
                 if (read != lFeed)
                 {
@@ -110,10 +110,75 @@ public class Parser
 
         }
 
+        String headerName;
+        while (true)
+        {
+            read = readByte(stream, chunk, offset++);
+
+            if (read == cReturn)
+            {
+                read = readByte(stream, chunk, offset++);
+                if (read != lFeed)
+                {
+                    throw new Exception("Unexpected CR not followed by LF.");
+                }
+                break;
+            }
+
+            if (read == space || read == lFeed)
+            {
+                throw new Exception("Invalid request header");
+            }
+
+            if (read != colon)
+            {
+                continue;
+            }
+
+            read = readByte(stream, chunk, offset++);
+            if (read != space)
+            {
+                throw new Exception("Invalid request header. missing space after header name");
+            }
+
+            headerName = Encoding.UTF8.GetString(chunk, 0, offset - 2);
+            offset = 0;
+
+            while (true)
+            {
+                read = readByte(stream, chunk, offset++);
+
+                if (read == lFeed || read == space)
+                {
+                    throw new Exception("Invalid request header. unexpected space character.");
+                }
+
+                if (read != cReturn)
+                {
+                    continue;
+                }
+
+                read = readByte(stream, chunk, offset++);
+
+                if (read != lFeed)
+                {
+                    throw new Exception("Invalid request header. unexpected CR not followed by LF.");
+                }
+
+                request.headers[headerName] = Encoding.UTF8.GetString(chunk, 0, offset - 2);
+                offset = 0;
+                break;
+
+            }
+
+        }
+
+        request.body = stream;
+
         return request;
     }
 
-    static byte readByte(Stream stream, byte[] chunk, int offset, int count)
+    static byte readByte(Stream stream, byte[] chunk, int offset)
     {
         stream.Read(chunk, offset, 1);
         return chunk[offset];

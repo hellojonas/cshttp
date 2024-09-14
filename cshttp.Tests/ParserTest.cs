@@ -31,16 +31,16 @@ public class ParserTest
         Assert.Equal(path, request.target);
         Assert.Equal(version, request.version);
 
-        // Assert.Equal(contentType, request.headers["Content-Type"]);
-        // Assert.Equal(host, request.headers["Host"]);
-        //
-        // int contentLength = int.Parse(request.headers["Content-Length"]);
-        // Assert.Equal(len, contentLength);
-        //
-        // byte[] data = new byte[len];
-        // request.body.Read(data, 0, data.Length);
-        // String strData = Encoding.UTF8.GetString(data);
-        //
-        // Assert.Equal(body, strData);
+        Assert.Equal(contentType, request.headers["Content-Type"]);
+        Assert.Equal(host, request.headers["Host"]);
+
+        int contentLength = int.Parse(request.headers["Content-Length"]);
+        Assert.Equal(len, contentLength);
+
+        byte[] data = new byte[len];
+        request.body.Read(data, 0, data.Length);
+        String strData = Encoding.UTF8.GetString(data);
+
+        Assert.Equal(body, strData);
     }
 }
