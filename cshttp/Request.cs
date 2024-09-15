@@ -5,17 +5,6 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text;
 
-static class Method
-{
-    public const String GET = "GET";
-    public const String POST = "POST";
-    public const String DELETE = "DELETE";
-    public const String OPTION = "OPTION";
-    public const String CONNECT = "CONNECT";
-    public const String PUT = "PUT";
-    public const String PATCH = "PATCH";
-}
-
 public class Request
 {
     public String? method;
@@ -23,6 +12,17 @@ public class Request
     public String? version;
     public Stream? body;
     public Dictionary<String, String> headers = new Dictionary<String, String>();
+
+    static class Method
+    {
+        public const String GET = "GET";
+        public const String POST = "POST";
+        public const String DELETE = "DELETE";
+        public const String OPTION = "OPTION";
+        public const String CONNECT = "CONNECT";
+        public const String PUT = "PUT";
+        public const String PATCH = "PATCH";
+    }
 }
 
 public class Parser
