@@ -3,15 +3,13 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Collections.Generic;
 
 
 public class Server
 {
-
-
     String host;
     Int32 port;
-    public delegate void Handler(Request req, Response res);
 
     public Server(String host, Int32 port)
     {
@@ -40,4 +38,16 @@ public class Server
         Request req = Parser.parse(stream);
         Response res = new Response(stream);
     }
+
+    void route(String method, String path, RequestHandler handler)
+    {
+    }
+}
+
+public delegate void RequestHandler(Request req, Response res);
+
+public class HandlerNode
+{
+    public RequestHandler Handler;
+    public Dictionary<(String, String), HandlerNode> part;
 }
