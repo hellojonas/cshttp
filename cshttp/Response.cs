@@ -24,6 +24,16 @@ public class Response
         return this;
     }
 
+    public Response Headers(Dictionary<String, String> headers)
+    {
+        foreach (var entry in headers)
+        {
+            this.headers[entry.Key] = entry.Value;
+        }
+
+        return this;
+    }
+
     public Response Header(String key, String value)
     {
         headers[key] = value;
