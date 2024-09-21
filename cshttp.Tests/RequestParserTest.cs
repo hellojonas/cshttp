@@ -4,7 +4,7 @@ using System.Text;
 
 namespace cshttp.Tests;
 
-public class ParserTest
+public class RequestParserTest
 {
     [Fact]
     public void shouldParseRequestLine()
