@@ -41,7 +41,45 @@ public class Server
     {
         NetworkStream stream = client.GetStream();
 
-        Request req = RequestParser.parse(stream);
         Response res = new Response(stream);
+        Request? req = null;
+
+        try
+        {
+            req = RequestParser.parse(stream);
+        }
+        catch (MessageSyntaxException)
+        {
+            res.Status(((int)HttpStatusCode.BadRequest)).Build();
+            return;
+        }
+
+        if (router == null)
+        {
+            res.Status(((int)HttpStatusCode.NotFound)).Build();
+            return;
+        }
+
+        RouterNode? node = router.lookUp(req.target);
+
+        if (node == null)
+        {
+            res.Status(((int)HttpStatusCode.NotFound)).Build();
+            return;
+        }
+
+        if (node.handlers == null)
+        {
+            res.Status(((int)HttpStatusCode.InternalServerError)).Build();
+            throw new Exception("Router node without handler.");
+        }
+
+        if (!node.handlers.ContainsKey(req.method))
+        {
+            res.Status(((int)HttpStatusCode.MethodNotAllowed)).Build();
+            return;
+        }
+
+        node.handlers[req.method](req, res);
     }
 }

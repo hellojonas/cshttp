@@ -7,9 +7,9 @@ using System.Text;
 
 public class Request
 {
-    public String? method;
-    public String? target;
-    public String? version;
+    public String method = "";
+    public String target = "";
+    public String version = "";
     public Stream? body;
     public Dictionary<String, String> headers = new Dictionary<String, String>();
 }
