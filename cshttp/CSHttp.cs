@@ -3,14 +3,14 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Collections.Generic;
 
+public delegate void RequestHandler(Request req, Response res);
 
 public class Server
 {
     String host;
     Int32 port;
-    Router router;
+    Router? router;
 
     public Server(String host, Int32 port)
     {
@@ -41,102 +41,25 @@ public class Server
     {
         NetworkStream stream = client.GetStream();
 
-        Request req = Parser.parse(stream);
+        Request req = RequestParser.parse(stream);
         Response res = new Response(stream);
     }
 }
 
-public delegate void RequestHandler(Request req, Response res);
-
-public class Router
+static class Methods
 {
-    RouterNode root;
-
-    public Router()
-    {
-        this.root = new RouterNode();
-    }
-
-    public RouterNode lookUp(String method, String path)
-    {
-        if (path == "/")
-        {
-            if (root.children.ContainsKey("/"))
-            {
-                return root.children["/"];
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        RouterNode cur = root;
-        String[] parts = path.Split("/");
-
-
-        for (int i = 1; i < parts.Length; i++)
-        {
-            String part = parts[i];
-            if (part == "")
-            {
-                continue;
-            }
-            if (cur.children.ContainsKey(part))
-            {
-                cur = cur.children[part];
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        return cur;
-    }
-
-    public void route(String method, String path, RequestHandler handler)
-    {
-        if (path == "/")
-        {
-            root.children["/"] = new RouterNode()
-            {
-                method = method,
-                handler = handler,
-                isEnd = true,
-            };
-            return;
-        }
-
-        RouterNode cur = root;
-        String[] parts = path.Split("/");
-
-        for (int i = 1; i < parts.Length; i++)
-        {
-            String part = parts[i];
-            if (part == "")
-            {
-                continue;
-            }
-
-            if (!cur.children.ContainsKey(part))
-            {
-                cur.children[part] = new RouterNode();
-            }
-
-            cur = cur.children[part];
-        }
-
-        cur.method = method;
-        cur.handler = handler;
-        cur.isEnd = true;
-    }
+    public const String GET = "GET";
+    public const String POST = "POST";
+    public const String DELETE = "DELETE";
+    public const String OPTION = "OPTION";
+    public const String CONNECT = "CONNECT";
+    public const String PUT = "PUT";
+    public const String PATCH = "PATCH";
 }
 
-public class RouterNode
+static class Headers
 {
-    public bool isEnd;
-    public String? method;
-    public RequestHandler? handler;
-    public Dictionary<String, RouterNode> children = new Dictionary<string, RouterNode>();
+    public const String Host = "Host";
+    public const String ContentType = "Content-Type";
+    public const String ContentLength = "Content-Length";
 }
