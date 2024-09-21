@@ -3,6 +3,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using cshttp.constants;
 
 public delegate void RequestHandler(Request req, Response res);
 
@@ -50,13 +51,13 @@ public class Server
         }
         catch (MessageSyntaxException)
         {
-            res.Status(((int)HttpStatusCode.BadRequest)).Build();
+            res.Status((HttpStatus.BAD_REQUEST)).Build();
             return;
         }
 
         if (router == null)
         {
-            res.Status(((int)HttpStatusCode.NotFound)).Build();
+            res.Status((HttpStatus.NOT_FOUND)).Build();
             return;
         }
 
@@ -64,19 +65,19 @@ public class Server
 
         if (node == null)
         {
-            res.Status(((int)HttpStatusCode.NotFound)).Build();
+            res.Status((HttpStatus.NOT_FOUND)).Build();
             return;
         }
 
         if (node.handlers == null)
         {
-            res.Status(((int)HttpStatusCode.InternalServerError)).Build();
+            res.Status((HttpStatus.INTERNAL_SERVER_ERROR)).Build();
             throw new Exception("Router node without handler.");
         }
 
         if (!node.handlers.ContainsKey(req.method))
         {
-            res.Status(((int)HttpStatusCode.MethodNotAllowed)).Build();
+            res.Status((HttpStatus.METHOD_NOT_ALLOWED)).Build();
             return;
         }
 

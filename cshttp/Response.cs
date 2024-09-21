@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
+using cshttp.constants;
 
 public class Response
 {
@@ -63,7 +64,7 @@ public class Response
 
     String createMessageHeader()
     {
-        StringBuilder builder = new StringBuilder($"HTTP/1.1 {status} OK\r\n");
+        StringBuilder builder = new StringBuilder($"HTTP/1.1 {status} {HttpStatusMessages.StatusDescriptions[status]}\r\n");
 
         foreach (var entry in headers)
         {
