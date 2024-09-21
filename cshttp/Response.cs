@@ -57,7 +57,7 @@ public class Response
 
         foreach (var entry in headers)
         {
-            builder.Append($"{entry.Key}: ${entry.Value}\r\n");
+            builder.Append($"{entry.Key}: {entry.Value}\r\n");
         }
 
         builder.Append("\r\n");
