@@ -3,6 +3,13 @@ namespace cshttp;
 using System;
 using System.Collections.Generic;
 
+class RouterNode
+{
+    public bool isEnd;
+    public Dictionary<String, RequestHandler>? handlers;
+    public Dictionary<String, RouterNode>? children;
+}
+
 public class Router
 {
     RouterNode root;
@@ -12,23 +19,27 @@ public class Router
         this.root = new RouterNode();
     }
 
-    public RequestHandler lookUp(String method, String path)
+    public RequestHandler? lookUp(String method, String path)
     {
+        RouterNode cur = root;
+
         if (path == "/")
         {
-            if (root.children.ContainsKey("/"))
-            {
-                return root.children["/"].handler;
-            }
-            else
+            if (cur.children == null || !cur.children.ContainsKey(path))
             {
                 return null;
             }
+
+            cur = cur.children[path];
+            if (cur.handlers == null || !cur.handlers.ContainsKey(method))
+            {
+                return null;
+            }
+
+            return cur.handlers[method];
         }
 
-        RouterNode cur = root;
         String[] parts = path.Split("/");
-
 
         for (int i = 1; i < parts.Length; i++)
         {
@@ -37,41 +48,73 @@ public class Router
             {
                 continue;
             }
-            if (cur.children.ContainsKey(part))
-            {
-                cur = cur.children[part];
-            }
-            else
+            if (cur.children == null || !cur.children.ContainsKey(part))
             {
                 return null;
+
             }
+            cur = cur.children[part];
         }
 
-        return cur.handler;
+        if (!cur.isEnd)
+        {
+            return null;
+        }
+
+        if (cur.handlers == null || !cur.handlers.ContainsKey(method))
+        {
+            return null;
+        }
+
+        return cur.handlers[method];
     }
 
-    public void route(String method, String path, RequestHandler handler)
+    public Router route(String method, String path, RequestHandler handler)
     {
+        RouterNode cur = root;
+        String part;
+
         if (path == "/")
         {
-            root.children["/"] = new RouterNode()
+            part = path;
+            if (cur.children == null)
             {
-                method = method,
-                handler = handler,
-                isEnd = true,
-            };
-            return;
+                cur.children = new Dictionary<String, RouterNode>();
+                cur.children[part] = new RouterNode();
+            }
+
+            if (!cur.children.ContainsKey(part))
+            {
+                cur.children[part] = new RouterNode();
+            }
+
+            cur = cur.children[part];
+
+            if (cur.handlers == null)
+            {
+                cur.handlers = new Dictionary<String, RequestHandler>();
+            }
+
+
+            cur.handlers[method] = handler;
+            cur.isEnd = true;
+            return this;
         }
 
-        RouterNode cur = root;
         String[] parts = path.Split("/");
 
         for (int i = 1; i < parts.Length; i++)
         {
-            String part = parts[i];
+            part = parts[i];
             if (part == "")
             {
                 continue;
+            }
+
+            if (cur.children == null)
+            {
+                cur.children = new Dictionary<String, RouterNode>();
+                cur.children[part] = new RouterNode();
             }
 
             if (!cur.children.ContainsKey(part))
@@ -82,16 +125,14 @@ public class Router
             cur = cur.children[part];
         }
 
-        cur.method = method;
-        cur.handler = handler;
-        cur.isEnd = true;
-    }
-}
+        if (cur.handlers == null)
+        {
+            cur.handlers = new Dictionary<String, RequestHandler>();
+        }
 
-class RouterNode
-{
-    public bool isEnd;
-    public String? method;
-    public RequestHandler? handler;
-    public Dictionary<String, RouterNode> children = new Dictionary<string, RouterNode>();
+        cur.handlers[method] = handler;
+        cur.isEnd = true;
+
+        return this;
+    }
 }
