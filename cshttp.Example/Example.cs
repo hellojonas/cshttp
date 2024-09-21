@@ -1,12 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using cshttp;
 using cshttp.constants;
 
-Server server = new Server("127.0.0.1", 8080);
+String addr = "127.0.0.1";
+Int32 port = 8080;
+
+Server server = new Server(addr, port);
 Router router = new Router();
 
-router.route("POST", "/resource", (req, res) =>
+List<String> messages = new List<string>();
+
+router.route("POST", "/messages", (req, res) =>
 {
     if (!req.headers.ContainsKey(HttpHeader.ContentLength))
     {
@@ -18,23 +24,23 @@ router.route("POST", "/resource", (req, res) =>
     byte[] body = new byte[len];
     req.body!.Read(body, 0, len);
 
-    Console.WriteLine($"'{Encoding.UTF8.GetString(body)}'");
+    messages.Add(Encoding.UTF8.GetString(body));
 
     res
     .Status(201)
     .Build();
 });
 
-router.route("GET", "/resource", (req, res) =>
+router.route("GET", "/messages", (req, res) =>
 {
-    String message = "Retrieved Saved Resource!";
+    String msgs = String.Join("\n", messages);
 
     res
     .Header("Content-Type", "text/plain")
-    .Header("Content-Length", message.Length.ToString())
-    .Write(Encoding.UTF8.GetBytes(message));
+    .Header("Content-Length", msgs.Length.ToString())
+    .Write(Encoding.UTF8.GetBytes(msgs));
 });
 
 server.mount(router);
-Console.WriteLine("Listening on port: " + 8080);
+Console.WriteLine($"Application listentin on {addr}:{port}");
 server.start();
