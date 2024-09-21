@@ -3,7 +3,7 @@ namespace cshttp;
 using System;
 using System.Collections.Generic;
 
-class RouterNode
+public class RouterNode
 {
     public bool isEnd;
     public Dictionary<String, RequestHandler>? handlers;
@@ -19,24 +19,18 @@ public class Router
         this.root = new RouterNode();
     }
 
-    public RequestHandler? lookUp(String method, String path)
+    public RouterNode? lookUp(String path)
     {
         RouterNode cur = root;
 
         if (path == "/")
         {
-            if (cur.children == null || !cur.children.ContainsKey(path))
+            if (cur.children == null)
             {
                 return null;
             }
 
-            cur = cur.children[path];
-            if (cur.handlers == null || !cur.handlers.ContainsKey(method))
-            {
-                return null;
-            }
-
-            return cur.handlers[method];
+            return cur.children[path];
         }
 
         String[] parts = path.Split("/");
@@ -61,12 +55,7 @@ public class Router
             return null;
         }
 
-        if (cur.handlers == null || !cur.handlers.ContainsKey(method))
-        {
-            return null;
-        }
-
-        return cur.handlers[method];
+        return cur;
     }
 
     public Router route(String method, String path, RequestHandler handler)

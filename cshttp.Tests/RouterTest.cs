@@ -45,15 +45,15 @@ public class RouterTest
         });
 
 
-        Assert.Throws<RetrievedException>(() => router.lookUp(HttpMethod.GET, route1)!(null!, null!));
-        Assert.Throws<CreatedException>(() => router.lookUp(HttpMethod.POST, route1)!(null!, null!));
+        Assert.Throws<RetrievedException>(() => router.lookUp(route1)!.handlers![HttpMethod.GET](null!, null!));
+        Assert.Throws<CreatedException>(() => router.lookUp(route1)!.handlers![HttpMethod.POST](null!, null!));
 
 
-        Assert.Throws<RetrievedException>(() => router.lookUp(HttpMethod.GET, route2)!(null!, null!));
-        Assert.Throws<CreatedException>(() => router.lookUp(HttpMethod.POST, route2)!(null!, null!));
+        Assert.Throws<RetrievedException>(() => router.lookUp(route2)!.handlers![HttpMethod.GET](null!, null!));
+        Assert.Throws<CreatedException>(() => router.lookUp(route2)!.handlers![HttpMethod.POST](null!, null!));
 
-        Assert.Throws<CreatedException>(() => router.lookUp(HttpMethod.POST, route3)!(null!, null!));
-        Assert.Throws<RetrievedException>(() => router.lookUp(HttpMethod.GET, route3)!(null!, null!));
+        Assert.Throws<CreatedException>(() => router.lookUp(route3)!.handlers![HttpMethod.POST](null!, null!));
+        Assert.Throws<RetrievedException>(() => router.lookUp(route3)!.handlers![HttpMethod.GET](null!, null!));
     }
 
     [Fact]
@@ -66,11 +66,11 @@ public class RouterTest
         {
             throw new RetrievedException();
         });
-        Assert.Throws<RetrievedException>(() => router.lookUp(HttpMethod.GET, route1)!(null!, null!));
+        Assert.Throws<RetrievedException>(() => router.lookUp(route1)!.handlers![HttpMethod.GET](null!, null!));
 
-        Assert.Null(router.lookUp(HttpMethod.POST, route1));
+        Assert.False(router.lookUp(route1)!.handlers!.ContainsKey(HttpMethod.POST));
 
         String route2 = "/path/to/another/resource";
-        Assert.Null(router.lookUp(HttpMethod.GET, route2));
+        Assert.Null(router.lookUp(route2));
     }
 }
