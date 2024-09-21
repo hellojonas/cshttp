@@ -12,20 +12,22 @@ public class Request
     public String? version;
     public Stream? body;
     public Dictionary<String, String> headers = new Dictionary<String, String>();
+}
 
-    static class Method
+public class MessageSyntaxException : Exception
+{
+    String near { get; }
+    public MessageSyntaxException(String message) : base(message)
     {
-        public const String GET = "GET";
-        public const String POST = "POST";
-        public const String DELETE = "DELETE";
-        public const String OPTION = "OPTION";
-        public const String CONNECT = "CONNECT";
-        public const String PUT = "PUT";
-        public const String PATCH = "PATCH";
+        this.near = "";
+    }
+    public MessageSyntaxException(String message, String near) : base(message)
+    {
+        this.near = near;
     }
 }
 
-public class Parser
+public class RequestParser
 {
     static byte lFeed = 10;
     static byte cReturn = 13;
@@ -45,12 +47,14 @@ public class Parser
             read = readByte(stream, chunk, offset++);
             if (read == lFeed || read == cReturn)
             {
-                throw new Exception("Invalid request-line method. unexpected new line");
+                String near = offset > 0 ? Encoding.UTF8.GetString(chunk, 0, offset - 1) : "";
+                throw new MessageSyntaxException("unexpected new line", near);
             }
 
             if (offset - 1 == 0 && chunk[0] == space)
             {
-                throw new Exception("Invalid request-line method. extra space not allowed");
+                String near = offset > 0 ? Encoding.UTF8.GetString(chunk, 0, offset - 1) : "";
+                throw new MessageSyntaxException("Dupliated space character.", near);
             }
 
             if (read != space)
@@ -68,7 +72,8 @@ public class Parser
             read = readByte(stream, chunk, offset++);
             if (read == lFeed || read == cReturn)
             {
-                throw new Exception("Invalid request-line request-target. unexpected new line");
+                String near = offset > 0 ? Encoding.UTF8.GetString(chunk, 0, offset - 1) : "";
+                throw new MessageSyntaxException("unexpected new line", near);
             }
 
             if (read != space)
@@ -77,7 +82,8 @@ public class Parser
             }
             if (offset - 1 == 0)
             {
-                throw new Exception("Invalid request-line, extra spacese not allowed");
+                String near = offset > 0 ? Encoding.UTF8.GetString(chunk, 0, offset - 1) : "";
+                throw new MessageSyntaxException("Dupliated space character.", near);
             }
 
             request.target = Encoding.UTF8.GetString(chunk, 0, offset - 1);
@@ -91,7 +97,8 @@ public class Parser
 
             if (read == space || read == lFeed)
             {
-                throw new Exception("Invalid request-line, extra spacese not allowed");
+                String near = offset > 0 ? Encoding.UTF8.GetString(chunk, 0, offset - 1) : "";
+                throw new MessageSyntaxException("Dupliated space character.", near);
             }
 
             if (read == cReturn)
@@ -100,7 +107,8 @@ public class Parser
 
                 if (read != lFeed)
                 {
-                    throw new Exception("Invalid request-line termination. CR not followed by LF.");
+                    String near = offset > 0 ? Encoding.UTF8.GetString(chunk, 0, offset - 1) : "";
+                    throw new MessageSyntaxException("Unexpected CR not followed by LF.", near);
                 }
 
                 request.version = Encoding.UTF8.GetString(chunk, 0, offset - 2);
@@ -120,14 +128,16 @@ public class Parser
                 read = readByte(stream, chunk, offset++);
                 if (read != lFeed)
                 {
-                    throw new Exception("Unexpected CR not followed by LF.");
+                    String near = offset > 0 ? Encoding.UTF8.GetString(chunk, 0, offset - 1) : "";
+                    throw new MessageSyntaxException("Unexpected CR not followed by LF.", near);
                 }
                 break;
             }
 
             if (read == space || read == lFeed)
             {
-                throw new Exception("Invalid request header");
+                String near = offset > 0 ? Encoding.UTF8.GetString(chunk, 0, offset - 1) : "";
+                throw new MessageSyntaxException("Invalid request header", near);
             }
 
             if (read != colon)
@@ -138,19 +148,28 @@ public class Parser
             read = readByte(stream, chunk, offset++);
             if (read != space)
             {
-                throw new Exception("Invalid request header. missing space after header name");
+                String near = offset > 0 ? Encoding.UTF8.GetString(chunk, 0, offset - 1) : "";
+                throw new MessageSyntaxException("Missing space after header name.", near);
             }
 
             headerName = Encoding.UTF8.GetString(chunk, 0, offset - 2);
             offset = 0;
 
+            read = readByte(stream, chunk, offset++);
+            if (read == space)
+            {
+                String near = offset > 0 ? Encoding.UTF8.GetString(chunk, 0, offset - 1) : "";
+                throw new MessageSyntaxException("Dupliated space character.", near);
+            }
+
             while (true)
             {
                 read = readByte(stream, chunk, offset++);
 
-                if (read == lFeed || read == space)
+                if (read == lFeed)
                 {
-                    throw new Exception("Invalid request header. unexpected space character.");
+                    String near = offset > 0 ? Encoding.UTF8.GetString(chunk, 0, offset - 1) : "";
+                    throw new MessageSyntaxException("Unexpected new line.", near);
                 }
 
                 if (read != cReturn)
@@ -162,19 +181,17 @@ public class Parser
 
                 if (read != lFeed)
                 {
-                    throw new Exception("Invalid request header. unexpected CR not followed by LF.");
+                    String near = offset > 0 ? Encoding.UTF8.GetString(chunk, 0, offset - 1) : "";
+                    throw new MessageSyntaxException("Unexpected CR not followed by LF.", near);
                 }
 
                 request.headers[headerName] = Encoding.UTF8.GetString(chunk, 0, offset - 2);
                 offset = 0;
                 break;
-
             }
-
         }
 
         request.body = stream;
-
         return request;
     }
 
